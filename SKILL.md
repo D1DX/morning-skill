@@ -2,7 +2,7 @@
 name: morning
 description: "Morning (Green Invoice) expense management — create expenses, upload files, manage classifications, search expenses/drafts. Auto-triggers on: Green Invoice API, Morning API, expense upload, חשבונית ירוקה, expense file attachment."
 disable-model-invocation: false
-user-invokable: true
+user-invocable: true
 argument-hint: "task description"
 ---
 
