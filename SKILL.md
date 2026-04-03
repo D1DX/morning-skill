@@ -272,24 +272,24 @@ For uploading many expenses from Airtable to Morning:
 import requests, json, time, uuid
 
 def upload_expense(record, token, base_url, classification_map):
-    """Upload single Airtable record to Morning with file."""
+    """Upload single record to Morning with file."""
     headers = {'Authorization': f'Bearer {token}'}
 
     # 1. Create expense
-    clause = record['fields'].get('Clause', '')
-    classification = classification_map.get(clause, {})
+    category = record.get('category', '')
+    classification = classification_map.get(category, {})
 
     expense = {
         'documentType': 305,
         'date': record['date'],
         'reportingDate': record['date'][:8] + '01',
-        'number': record['fields'].get('Source ID', record['fields'].get('ID', '')),
+        'number': record.get('document_number', ''),
         'currency': record['currency'],
         'amount': record['amount'],
         'amountExcludeVat': record['amount'],  # Foreign = no VAT split
         'vat': 0,
         'supplier': {
-            'name': record['fields'].get('Entity Name', ['Unknown'])[0],
+            'name': record.get('supplier_name', 'Unknown'),
             'taxId': '',
             'country': 'US'  # Adjust per record
         },
@@ -301,7 +301,7 @@ def upload_expense(record, token, base_url, classification_map):
     expense_id = resp.json()['id']
 
     # 2. Upload file
-    file_url = record['file_url'][0]['url']
+    file_url = record['file_url']
     pdf_data = requests.get(file_url).content
 
     data_param = json.dumps({"source": 5, "id": expense_id, "state": "expense"})
