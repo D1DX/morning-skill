@@ -5,7 +5,17 @@
 [![Morning](https://img.shields.io/badge/Morning_(חשבונית_ירוקה)-Skill-00B37E?style=flat&logoColor=white)](https://www.greeninvoice.co.il)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat)](./LICENSE)
 
-Morning (Green Invoice / חשבונית ירוקה) skill for AI agents. Covers expense management, file upload via presigned S3 URLs, accounting classifications, expense search, and webhooks. Built from production expense import automation.
+Morning (Green Invoice / חשבונית ירוקה) skill for AI agents. Covers expense management, file upload via presigned S3 URLs, accounting classifications, expense search, and webhooks. Built from production expense import automation at [D1DX](https://d1dx.com).
+
+**This skill uses Morning's official public API** ([Apiary spec](https://jsapi.apiary.io/apis/greeninvoice.json)) — not a reverse-engineered or unofficial API.
+
+## When to Use What
+
+| Method | When |
+|--------|------|
+| **Morning UI** | One-off expense entry, draft review, classification setup |
+| **Morning API** (this skill) | Bulk imports, automated expense creation from external sources, file uploads with OCR |
+| **Morning + n8n/Make** | Webhook-driven flows (e.g., auto-create expense when a file lands in Google Drive) |
 
 ## What's Included
 
