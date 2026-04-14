@@ -5,7 +5,7 @@
 [![Morning](https://img.shields.io/badge/Morning_(חשבונית_ירוקה)-Skill-00B37E?style=flat&logoColor=white)](https://www.greeninvoice.co.il)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat)](./LICENSE)
 
-Morning (Green Invoice / חשבונית ירוקה) skill for AI agents. Covers expense management, file upload via presigned S3 URLs, accounting classifications, expense search, and webhooks. Built from production expense import automation at [D1DX](https://d1dx.com).
+Full Morning (Green Invoice / חשבונית ירוקה) API skill for AI agents. Covers the complete API surface: expenses, file upload, classifications, clients, suppliers, items, documents (invoices, receipts, quotes), payments, business settings, and reference data. Expenses and file upload are documented with raw API patterns; all other endpoints use [morning-cli](https://github.com/Jango-AI-com/morning-cli) as the execution layer.
 
 **This skill uses Morning's official public API** ([Apiary spec](https://jsapi.apiary.io/apis/greeninvoice.json)) — not a reverse-engineered or unofficial API.
 
@@ -13,8 +13,9 @@ Morning (Green Invoice / חשבונית ירוקה) skill for AI agents. Covers 
 
 | Method | When |
 |--------|------|
-| **Morning UI** | One-off expense entry, draft review, classification setup |
-| **Morning API** (this skill) | Bulk imports, automated expense creation from external sources, file uploads with OCR |
+| **Morning UI** | One-off entry, draft review, classification setup |
+| **morning-cli** (this skill, sections 10–18) | Clients, suppliers, items, documents, payments, business, reference data |
+| **Raw API / Python** (this skill, sections 1–9) | Expense bulk imports, file uploads with OCR, automation scripts |
 | **Morning + n8n/Make** | Webhook-driven flows (e.g., auto-create expense when a file lands in Google Drive) |
 
 ## What's Included

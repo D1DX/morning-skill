@@ -1,6 +1,6 @@
 ---
 name: morning
-description: "Morning (Green Invoice) expense management — create expenses, upload files, manage classifications, search expenses/drafts. Auto-triggers on: Green Invoice API, Morning API, expense upload, חשבונית ירוקה, expense file attachment."
+description: "Morning (Green Invoice) full API reference — expenses, file upload, classifications, clients, suppliers, items, documents (invoices/receipts), payments, business settings, reference data. Auto-triggers on: Green Invoice API, Morning API, expense upload, invoice creation, חשבונית ירוקה, morning-cli."
 disable-model-invocation: false
 user-invocable: true
 argument-hint: "task description"
@@ -335,4 +335,446 @@ def upload_expense(record, token, base_url, classification_map):
 - Presigned URLs expire in ~1 minute (check Policy `expiration` field)
 
 ---
+
+## 10. Other Endpoints via morning-cli
+
+Sections 11–18 document these command groups. All use **morning-cli** as the execution layer:
+
+```bash
+pip install morning-cli
+morning-cli auth init --env sandbox   # or production
+```
+
+All commands accept `--env sandbox|production` and `--json` for machine-readable output.
+Use `morning-cli <group> --help` for the full subcommand list.
+
+**Do NOT use morning-cli for expense file uploads** — use the two-step S3 presigned flow in Section 4.
+
+---
+
+## 11. Clients (`morning-cli client`)
+
+| Subcommand | What it does |
+|------------|-------------|
+| `search` | List/filter clients with pagination and text search |
+| `get` | Fetch a single client by UUID |
+| `add` | Create a new client |
+| `update` | Patch fields on an existing client |
+| `balance` | Get balance data for a client |
+| `assoc` | Associate a client with other entity IDs |
+| `merge` | Merge this client into a target client (destructive) |
+| `delete` | Delete a client by ID |
+
+### Key commands
+
+**Search clients:**
+```bash
+morning-cli --env sandbox --json client search
+morning-cli --env sandbox --json client search --data '{"searchText":"acme","pageSize":25,"page":1}'
+```
+Response shape:
+```json
+{
+  "ok": true,
+  "op": "client.search",
+  "data": {
+    "pageSize": 25, "page": 1, "total": 1, "pages": 1,
+    "items": [
+      {
+        "id": "b6a1da5e-fdb6-4edd-87b8-e45b611d4370",
+        "name": "Test Client",
+        "active": true, "send": true,
+        "taxId": "", "accountingKey": "b5984494",
+        "city": "Tel Aviv", "country": "IL",
+        "emails": ["test@example.com"],
+        "incomeAmount": 0, "paymentAmount": 0, "balanceAmount": 0,
+        "creationDate": 1776155807, "lastUpdateDate": 1776155816,
+        "self": false
+      }
+    ]
+  }
+}
+```
+
+**Get client:**
+```bash
+morning-cli --env sandbox --json client get <CLIENT_ID>
+```
+
+**Create client:**
+```bash
+morning-cli --env sandbox --json client add --data '{"name":"Acme Ltd","country":"IL","emails":["billing@acme.com"]}'
+```
+
+**Update client:**
+```bash
+morning-cli --env sandbox --json client update <CLIENT_ID> --data '{"city":"Tel Aviv","remarks":"VIP"}'
+```
+
+**Get balance:**
+```bash
+morning-cli --env sandbox --json client balance <CLIENT_ID> --data '{}'
+```
+Returns `{}` when no transactions exist.
+
+**Associate:**
+```bash
+morning-cli --env sandbox --json client assoc <CLIENT_ID> --data '{"ids":["<OTHER_CLIENT_ID>"]}'
+```
+
+**Merge (destructive):**
+```bash
+morning-cli --env sandbox --json client merge <SOURCE_ID> --data '{"id":"<TARGET_ID>"}'
+```
+
+**Delete:**
+```bash
+morning-cli --env sandbox --json client delete <CLIENT_ID> --yes
+```
+
+### Gotchas
+- `client balance` requires `--data '{}'` — the flag is mandatory even with an empty body
+- `client assoc` requires `ids` in body — omitting returns error 2402
+- `send: true` is set automatically on creation (clients receive documents); suppliers default `send: false`
+- Dates are Unix timestamps (seconds), not ISO strings
+- `--file FILE` accepted as alternative to `--data` on add/update/search
+
+---
+
+## 12. Suppliers (`morning-cli supplier`)
+
+| Subcommand | What it does |
+|------------|-------------|
+| `search` | List/filter suppliers with pagination and text search |
+| `get` | Fetch a single supplier by UUID |
+| `add` | Create a new supplier |
+| `update` | Patch fields on an existing supplier |
+| `merge` | Merge this supplier into a target supplier (destructive) |
+| `delete` | Delete a supplier by ID |
+
+### Key commands
+
+**Search suppliers:**
+```bash
+morning-cli --env sandbox --json supplier search
+morning-cli --env sandbox --json supplier search --data '{"searchText":"acme","pageSize":25,"page":1}'
+```
+Response shape mirrors clients — key differences: has `businessId`, `fax`, `mobile`, `accountingClassificationId`; lacks `nameAliases`, `bankName/Branch/Account`, `self`.
+
+**Create supplier:**
+```bash
+morning-cli --env sandbox --json supplier add --data '{"name":"Acme Vendor","country":"IL","taxId":"514756428"}'
+```
+
+**Update supplier:**
+```bash
+morning-cli --env sandbox --json supplier update <SUPPLIER_ID> --data '{"city":"Tel Aviv"}'
+```
+
+**Merge (destructive):**
+```bash
+morning-cli --env sandbox --json supplier merge <SOURCE_ID> --data '{"id":"<TARGET_ID>"}'
+```
+
+**Delete:**
+```bash
+morning-cli --env sandbox --json supplier delete <SUPPLIER_ID> --yes
+```
+
+### Gotchas
+- No `assoc` or `balance` subcommands — those are client-only
+- `accountingClassificationId` links to an expense category — set this to auto-classify expenses from this supplier
+- `send: false` is the default for suppliers
+- Aggregations shape differs from client search — no `byName.buckets` key
+
+---
+
+## 13. Documents (`morning-cli document`)
+
+| Subcommand | What it does |
+|------------|-------------|
+| `types` | List all document type IDs and names (Hebrew) |
+| `statuses` | List all document status IDs and names |
+| `templates` | List visual templates |
+| `info` | Get defaults + next document number for a given type |
+| `search` | Search/list documents with filters |
+| `payments-search` | Search payment rows across documents |
+| `get` | Fetch a single document by ID |
+| `linked` | Fetch documents linked to a given document |
+| `create` | Create a new document |
+| `preview` | Preview without creating |
+| `open` | Reopen a closed document |
+| `close` | Close an open document |
+| `download` | Download document PDF |
+
+### Document type IDs
+| ID | English |
+|----|---------|
+| 10 | Quote |
+| 20 | Proforma / Payment confirmation |
+| 300 | Transaction invoice |
+| 305 | Tax invoice |
+| 320 | Tax invoice + receipt (most common) |
+| 330 | Credit invoice |
+| 400 | Receipt |
+| 500 | Purchase order |
+
+### Document status IDs
+| ID | Hebrew |
+|----|--------|
+| 0 | Open |
+| 1 | Closed |
+| 2 | Manually closed |
+| 3 | Cancelling |
+| 4 | Cancelled |
+
+### Key commands
+
+**Get document types:**
+```bash
+morning-cli --env sandbox --json document types
+morning-cli --env sandbox --json document types --lang en
+```
+
+**Get info/defaults for a type:**
+```bash
+morning-cli --env sandbox --json document info --type 320
+```
+Returns: next document number, VAT rate, allowed VAT types, max backdating days, `token` (required by some create paths), currency/language defaults, feature flags.
+
+**Search documents:**
+```bash
+morning-cli --env sandbox --json document search --data '{"type":320,"page":1}'
+```
+Useful filters: `type`, `status`, `clientId`, `fromDate`, `toDate`, `page`, `pageSize`.
+
+**Preview document (non-destructive):**
+```bash
+morning-cli --env sandbox --json document preview --data '{
+  "type": 320,
+  "client": {"id": "<CLIENT_ID>"},
+  "currency": "ILS",
+  "vatType": 0,
+  "date": "2026-04-14",
+  "incomeRows": [{"description": "Service", "quantity": 1, "price": 1000, "currency": "ILS", "vatType": 0}],
+  "paymentRows": [{"date": "2026-04-14", "type": 1, "price": 1180, "currency": "ILS"}]
+}'
+```
+
+**Create document (same payload as preview — irreversible):**
+```bash
+morning-cli --env sandbox --json document create --data '{ ... same as preview ... }'
+```
+Required fields: `type`, `client.id`, `currency`, `vatType`, `date`, at least one `incomeRows` entry with `description` + `price`.
+
+### Payment type IDs (for `paymentRows[].type`)
+| ID | Type |
+|----|------|
+| 1 | Bank transfer |
+| 2 | Check |
+| 3 | Cash |
+| 4 | Credit card |
+| 5 | PayPal |
+| 10 | Other |
+
+### Gotchas
+- **Always preview before create** — creation is irreversible and increments the document number sequence
+- `document info` returns a `token` — some create paths require passing it to confirm the next number; fetch fresh immediately before create
+- `vatType: 0` = standard VAT included; `vatType: 1` = zero VAT (exempt)
+- `maxDaysBack` enforced by API — backdating beyond it will fail (~59 days in sandbox)
+- `signed: true` in the payload finalizes (issues) the document; omit for draft if account supports it (`unsignedEnabled` in `document info`)
+
+---
+
+## 14. Items (`morning-cli item`)
+
+| Subcommand | What it does |
+|------------|-------------|
+| `search` | Search/list price list items |
+| `get` | Fetch a single item by UUID |
+| `add` | Create a new price list item |
+| `update` | Update an existing item |
+| `delete` | Delete an item |
+
+### Key commands
+
+**List items:**
+```bash
+morning-cli --env sandbox --json item search
+morning-cli --env sandbox --json item search --data '{"page":1,"pageSize":25}'
+```
+Response shape:
+```json
+{
+  "ok": true, "op": "item.search",
+  "data": {
+    "items": [
+      {
+        "id": "e0b445f5-9a02-4da7-bac1-c641a5d26d8c",
+        "name": "Test Item", "description": "",
+        "price": 200, "currency": "ILS",
+        "creationDate": 1776155844
+      }
+    ]
+  }
+}
+```
+
+**Create item:**
+```bash
+morning-cli --env sandbox --json item add --data '{"name":"Item Name","description":"Item description","price":100,"currency":"ILS"}'
+```
+Required fields: `name`, `description`, `price`, `currency`
+
+**Update item:**
+```bash
+morning-cli --env sandbox --json item update <ITEM_ID> --data '{"name":"Updated","description":"Updated desc","price":150,"currency":"ILS"}'
+```
+
+**Delete:**
+```bash
+morning-cli --env sandbox --json item delete <ITEM_ID> --yes
+```
+
+### Gotchas
+- `update` is a **full replace** — omitting any field clears it. Always send all fields you want to keep.
+- Error 2300 = missing name, error 2301 = missing description
+
+---
+
+## 15. Payments (`morning-cli payment`)
+
+| Subcommand | What it does |
+|------------|-------------|
+| `tokens-search` | Search saved payment tokens (stored cards) |
+| `charge` | Charge a saved payment token |
+| `form` | Create a hosted payment form |
+
+### Key commands
+
+**Search tokens:**
+```bash
+morning-cli --env sandbox --json payment tokens-search
+```
+
+**Charge a token:**
+```bash
+morning-cli --env sandbox --json payment charge <TOKEN_ID> --data '{"amount":100,"currency":"ILS"}'
+```
+
+**Create payment form:**
+```bash
+morning-cli --env sandbox --json payment form --data '{"documentType":<type>,"client":{...},"income":[...]}'
+```
+
+### Gotchas
+- `payment form` returns error 2403 in sandbox — "Document type not supported for this business type." This is a sandbox account tier restriction, not a payload error.
+- `payment charge` requires a real token UUID from `tokens-search` — passing any non-existent UUID returns error 1100
+- `tokens-search` aggregations returns `[]` (empty array) not an object — shape differs from other search endpoints
+
+---
+
+## 16. Business (`morning-cli business`)
+
+| Subcommand | What it does |
+|------------|-------------|
+| `current` | Active business profile |
+| `list` | All businesses under the account |
+| `get` | Specific business by UUID |
+| `types` | Legal entity types |
+| `footer` | Document footer configuration |
+| `numbering-get` | Document numbering sequences per type |
+| `numbering-update` | Update numbering sequences |
+| `update` | Update business profile |
+| `file-upload` | Upload logo/signature (`--type 0`=logo, `1`=signature) |
+| `file-delete` | Delete uploaded file by type |
+
+### Key commands
+
+**Get current business:**
+```bash
+morning-cli --env sandbox --json business current
+```
+Response includes: `id`, `type`, `taxId`, `name`, `address`, `cityId`, `category`, `subCategory`, `exemption`, `inboundEmail`, `settings` (currency, lang, vatType, taxAuthorityConnected).
+
+**Get numbering sequences:**
+```bash
+morning-cli --env sandbox --json business numbering-get
+```
+Returns one entry per document type: `type`, `number`, `nextNumber`, `lastDocumentDate`, `active`.
+
+**Get business types:**
+```bash
+morning-cli --env sandbox --json business types --lang en
+```
+| ID | English |
+|----|---------|
+| 1 | Licensed dealer |
+| 2 | Ltd. company |
+| 3 | Exempt dealer |
+| 4 | Non-profit / NGO |
+| 5 | Public benefit company |
+| 6 | Partnership |
+
+### Gotchas
+- `business current` and `business list` return identical data — `current` is shorthand for the single credentialed business
+- `business footer` returns `{}` when no footer is configured — not an error
+- `business get` requires the UUID, not the taxId
+
+---
+
+## 17. Partners (`morning-cli partner`)
+
+| Subcommand | What it does |
+|------------|-------------|
+| `users` | List all users connected to the partner account |
+| `get` | Get a specific user by email |
+| `connect` | Connect a business to the partner account |
+| `disconnect` | Disconnect a business |
+
+### Gotchas
+- **All partner commands return HTTP 401 with regular credentials.** Partner API requires an accountant/partner-tier Morning account. Not usable with standard business API keys.
+
+---
+
+## 18. Reference Data (`morning-cli tools`)
+
+| Subcommand | What it does |
+|------------|-------------|
+| `currencies` | All supported currencies with live ILS exchange rates |
+| `countries` | All countries with alpha2/alpha3 codes and calling codes |
+| `cities` | Cities for a given country (`--country` required, ISO alpha2) |
+| `occupations` | Full occupation/category tree for business classification |
+
+### Key commands
+
+**Get currencies (live rates):**
+```bash
+morning-cli --env sandbox --json tools currencies
+```
+Returns 31 currencies vs ILS base. Each has `spot.current` (real-time) and `closing.current` (previous business day official rate).
+
+Supported: `ILS, AED, AUD, BGN, BRL, CAD, CHF, CNY, CZK, DKK, EUR, GBP, HKD, HUF, IDR, INR, JPY, KRW, MXN, NOK, NZD, PHP, PLN, RON, RUB, SEK, SGD, THB, TRY, USD, ZAR`
+
+**Get countries:**
+```bash
+morning-cli --env sandbox --json tools countries --locale en
+```
+
+**Get cities:**
+```bash
+morning-cli --env sandbox --json tools cities --country IL
+```
+City `id` maps to `business.cityId`.
+
+**Get occupations tree:**
+```bash
+morning-cli --env sandbox --json tools occupations --locale en
+```
+Two-level tree: parent `category` + child `subCategory`. IDs map to `business.category` / `business.subCategory`.
+
+### Gotchas
+- `tools cities --country` requires ISO alpha2 (`IL`, `US`) — not alpha3
+- All tools default to `--locale he` (Hebrew). Pass `--locale en` for English.
+- `currencies` returns **live rates** — not static. Spot and closing rates differ.
 
