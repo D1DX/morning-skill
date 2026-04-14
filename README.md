@@ -20,11 +20,13 @@ Full Morning (Green Invoice / חשבונית ירוקה) API skill for AI agents
 
 ## What's Included
 
+**Sections 1–9 — Raw API (Python)**
+
 | Topic | What it covers |
 |-------|---------------|
 | Authentication | Bearer token via `/account/token`, production vs sandbox base URLs |
-| Endpoints Quick Reference | All expense and classification endpoints in one table |
-| Create Expense | Full request structure, document types, payment types, expense statuses — with Hebrew labels |
+| Expense Endpoints | All expense and classification endpoints in one table |
+| Create Expense | Full request structure, document types, payment types, statuses — with Hebrew labels |
 | File Upload (Two-Step) | Presigned S3 URL flow: create expense → get presigned URL → upload to S3 → poll for attachment |
 | File Upload Gotchas | requests library required, field ordering, async processing (5–15s), file type limits |
 | Upload-First Flow | Upload file → create draft (Morning runs OCR and creates draft automatically) |
@@ -33,7 +35,20 @@ Full Morning (Green Invoice / חשבונית ירוקה) API skill for AI agents
 | Webhooks | expense-draft/parsed, expense-file/updated, expense-draft/declined, file/infected |
 | Common Errors | Error codes 3306, 3310, 3311, 3312 with Hebrew descriptions and fixes |
 | Bulk Upload Pattern | Complete Python pattern for uploading many expenses with files from external sources |
-| Rate Limits | API ~10 req/s, presigned URL expiry (~1 min), sequential S3 upload recommendation |
+
+**Sections 10–18 — morning-cli**
+
+| Section | What it covers |
+|---------|---------------|
+| 10 | morning-cli setup and routing guide |
+| 11 | Clients — CRUD, search, balance, associate, merge |
+| 12 | Suppliers — CRUD, search, merge |
+| 13 | Documents — types, statuses, search, preview, create, download |
+| 14 | Items — price list CRUD |
+| 15 | Payments — tokens, charge, payment form |
+| 16 | Business — profile, numbering sequences, logo/signature upload |
+| 17 | Partners — partner-tier account operations |
+| 18 | Reference data — currencies (live rates), countries, cities, occupations |
 
 ## Install
 
@@ -58,7 +73,7 @@ Copy `SKILL.md` into your agent's prompt or knowledge directory. The skill is st
 
 ```
 morning-skill/
-└── SKILL.md    — Main skill (auth, expense CRUD, file upload flow, classifications, error codes)
+└── SKILL.md    — Full API skill (18 sections: expenses + file upload via raw API; all other endpoints via morning-cli)
 ```
 
 ## Key Gotcha: supplier placement
@@ -67,8 +82,8 @@ The most common error (code 3311) is placing `supplier` inside a `data` object. 
 
 ## Sources
 
-- **Morning API:** Verified against the [Morning/Green Invoice Apiary specification](https://jsapi.apiary.io/apis/greeninvoice.json) and live production usage (March 2026).
-- **File upload flow:** Verified from live S3 presigned URL uploads and polling behavior.
+- **Sections 1–9:** Verified against the [Morning/Green Invoice Apiary specification](https://jsapi.apiary.io/apis/greeninvoice.json) and live production usage (March 2026).
+- **Sections 10–18:** Verified against live sandbox via [morning-cli](https://github.com/Jango-AI-com/morning-cli) (April 2026).
 
 ## Credits
 

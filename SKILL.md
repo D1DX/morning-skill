@@ -6,15 +6,18 @@ user-invocable: true
 argument-hint: "task description"
 ---
 
-# Morning (Green Invoice) Expenses API Skill
+# Morning (Green Invoice) API Skill
 
-Complete reference for the Morning/Green Invoice Expenses API including file uploads, classifications, drafts, and bulk operations.
+Full reference for the Morning/Green Invoice API. Sections 1–9 cover expenses, file upload, and classifications via raw API (Python). Sections 10–18 cover all remaining endpoints via morning-cli.
 
-**As of March 2026.** Source: Apiary spec at `https://jsapi.apiary.io/apis/greeninvoice.json`.
+**Sections 1–9:** As of March 2026. Source: Apiary spec at `https://jsapi.apiary.io/apis/greeninvoice.json`.
+**Sections 10–18:** As of April 2026. Verified against live sandbox.
 
 ---
 
-## 1. Authentication
+## 1. Authentication (Sections 1–9 — Raw API)
+
+> **Sections 1–9 use the raw API directly (Python/curl).** For morning-cli auth (sections 10–18), see Section 10.
 
 ```python
 import requests, json
@@ -25,6 +28,8 @@ token = resp.json()['token']
 headers = {'Authorization': f'Bearer {token}'}
 ```
 
+Token expires in ~1 hour. Re-authenticate at the start of each session.
+
 **Base URLs:**
 - Production: `https://api.greeninvoice.co.il/api/v1`
 - Sandbox: `https://sandbox.d.greeninvoice.co.il/api/v1`
@@ -32,7 +37,7 @@ headers = {'Authorization': f'Bearer {token}'}
 
 ---
 
-## 2. Endpoints Quick Reference
+## 2. Expense Endpoints Quick Reference
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
@@ -520,7 +525,7 @@ morning-cli --env sandbox --json supplier delete <SUPPLIER_ID> --yes
 | 500 | Purchase order |
 
 ### Document status IDs
-| ID | Hebrew |
+| ID | Status |
 |----|--------|
 | 0 | Open |
 | 1 | Closed |
@@ -568,6 +573,9 @@ morning-cli --env sandbox --json document create --data '{ ... same as preview .
 Required fields: `type`, `client.id`, `currency`, `vatType`, `date`, at least one `incomeRows` entry with `description` + `price`.
 
 ### Payment type IDs (for `paymentRows[].type`)
+
+> **Note:** These are document payment types — different context from expense payment types in Section 3.
+
 | ID | Type |
 |----|------|
 | 1 | Bank transfer |
