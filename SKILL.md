@@ -574,16 +574,19 @@ Required fields: `type`, `client.id`, `currency`, `vatType`, `date`, at least on
 
 ### Payment type IDs (for `paymentRows[].type`)
 
-> **Note:** These are document payment types — different context from expense payment types in Section 3.
+> **Note:** Document payment types use the **same numeric enum** as the expense payment types in Section 3 — verified against the Morning API payment-type blueprint (D-1486). Earlier revisions of this table had the values scrambled (e.g. `4` shown as "Credit card"); `4` is **Bank transfer**, confirmed by an issued document rendering "Wire transfer" for a type-4 row (D-1482).
 
 | ID | Type |
 |----|------|
-| 1 | Bank transfer |
+| -1 | Unpaid |
+| 0 | Withholding tax (deduction at source) |
+| 1 | Cash |
 | 2 | Check |
-| 3 | Cash |
-| 4 | Credit card |
+| 3 | Credit card |
+| 4 | Bank transfer |
 | 5 | PayPal |
-| 10 | Other |
+| 10 | Payment app |
+| 11 | Other |
 
 ### Gotchas
 - **Always preview before create** — creation is irreversible and increments the document number sequence
