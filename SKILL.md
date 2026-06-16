@@ -1,6 +1,6 @@
 ---
 name: morning
-description: "Morning (Green Invoice) full API reference — expenses, file upload, classifications, clients, suppliers, items, documents (invoices/receipts), payments, business settings, reference data. Auto-triggers on: Green Invoice API, Morning API, expense upload, invoice creation, חשבונית ירוקה, morning-cli."
+description: "Morning (Green Invoice) full API reference — expenses, file upload, classifications.
 disable-model-invocation: false
 user-invocable: true
 argument-hint: "task description"
@@ -511,6 +511,20 @@ morning-cli --env sandbox --json supplier delete <SUPPLIER_ID> --yes
 | `open` | Reopen a closed document |
 | `close` | Close an open document |
 | `download` | Download document PDF |
+
+> **Emailing / resending an existing document — raw API, no CLI subcommand.**
+> morning-cli has **no** send/distribute subcommand, and there is **no** `/send`
+> or `/notify` endpoint (both 404). To email an already-created document, POST to
+> **`/documents/{id}/distribute`** with a bearer token:
+> ```bash
+> curl -s "https://api.greeninvoice.co.il/api/v1/documents/{id}/distribute" \
+>   -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+>   -d '{"attachment": false, "recipients": ["client@example.com"], "remarks": ""}'
+> # 200 + {} = sent. attachment:true embeds the PDF; false sends the doc link.
+> # recipients defaults best to the doc's own client emails (GET /documents/{id} → .client.emails).
+> ```
+> Morning otherwise emails ONLY at creation (`sendByEmail: true` in the create
+> payload). Re-creating a document to "resend" makes a DUPLICATE — use distribute.
 
 ### Document type IDs
 | ID | English |
