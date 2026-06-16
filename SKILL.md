@@ -372,10 +372,11 @@ Use `morning-cli <group> --help` for the full subcommand list.
 
 ### Key commands
 
-**Search clients:**
+**Search clients:** the filter field is **`name`** — `searchText`/`text` are
+silently ignored and return the full client list (verified against production).
 ```bash
 morning-cli --env sandbox --json client search
-morning-cli --env sandbox --json client search --data '{"searchText":"acme","pageSize":25,"page":1}'
+morning-cli --env sandbox --json client search --data '{"name":"acme","pageSize":25,"page":1}'
 ```
 Response shape:
 ```json
