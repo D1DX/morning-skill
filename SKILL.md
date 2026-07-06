@@ -22,17 +22,25 @@ Full reference for the Morning/Green Invoice API. Sections 1–9 cover expenses,
 ```python
 import requests, json
 
-resp = requests.post("https://api.greeninvoice.co.il/api/v1/account/token",
-                     json={'id': API_KEY, 'secret': API_SECRET})
-token = resp.json()['token']
+# Token fetch is the OAuth2 client-credentials call on the IDP host (api.morning.co).
+# The legacy POST https://api.greeninvoice.co.il/api/v1/account/token
+# ({id, secret} -> {token}) is BLOCKED from 2026-07-15. The id/secret VALUES are
+# unchanged — only the endpoint, field names, and grant_type change.
+resp = requests.post("https://api.morning.co/idp/v1/oauth/token",
+                     json={'grant_type': 'client_credentials',
+                           'client_id': API_KEY, 'client_secret': API_SECRET})
+token = resp.json()['accessToken']
 headers = {'Authorization': f'Bearer {token}'}
 ```
 
-Token expires in ~1 hour. Re-authenticate at the start of each session.
+The response is `{accessToken, tokenType: "Bearer", expiresAt}` — `expiresAt` is a
+Unix timestamp (~1 hour out); re-authenticate once it passes. Only the token FETCH
+moves host; every standard API call below stays on `api.greeninvoice.co.il/api/v1`.
 
 **Base URLs:**
-- Production: `https://api.greeninvoice.co.il/api/v1`
-- Sandbox: `https://sandbox.d.greeninvoice.co.il/api/v1`
+- Token / IDP: `https://api.morning.co` — path `/idp/v1/oauth/token` (sandbox `https://api.sandbox.morning.dev`)
+- Production API: `https://api.greeninvoice.co.il/api/v1`
+- Sandbox API: `https://sandbox.d.greeninvoice.co.il/api/v1`
 - File upload gateway: `https://apigw.greeninvoice.co.il/file-upload/v1/url`
 
 ---

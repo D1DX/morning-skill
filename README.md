@@ -24,7 +24,7 @@ Full Morning (Green Invoice / חשבונית ירוקה) API skill for AI agents
 
 | Topic | What it covers |
 |-------|---------------|
-| Authentication | Bearer token via `/account/token`, production vs sandbox base URLs |
+| Authentication | Bearer token via the OAuth2 IDP call `POST api.morning.co/idp/v1/oauth/token` (legacy `/account/token` blocked 2026-07-15), production vs sandbox base URLs |
 | Expense Endpoints | All expense and classification endpoints in one table |
 | Create Expense | Full request structure, document types, payment types, statuses — with Hebrew labels |
 | File Upload (Two-Step) | Presigned S3 URL flow: create expense → get presigned URL → upload to S3 → poll for attachment |
