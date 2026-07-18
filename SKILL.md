@@ -597,7 +597,7 @@ Required fields: `type`, `client.id`, `currency`, `vatType`, `date`, at least on
 
 ### Payment type IDs (for `paymentRows[].type`)
 
-> **Note:** Document payment types use the **same numeric enum** as the expense payment types in Section 3 — verified against the Morning API payment-type blueprint (D-1486). Earlier revisions of this table had the values scrambled (e.g. `4` shown as "Credit card"); `4` is **Bank transfer**, confirmed by an issued document rendering "Wire transfer" for a type-4 row (D-1482).
+> **Note:** Document payment types use the **same numeric enum** as the expense payment types in Section 3 — verified against the Morning API payment-type blueprint. Earlier revisions of this table had the values scrambled (e.g. `4` shown as "Credit card"); `4` is **Bank transfer**, confirmed by an issued document rendering "Wire transfer" for a type-4 row.
 
 | ID | Type |
 |----|------|
