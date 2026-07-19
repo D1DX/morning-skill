@@ -1,8 +1,8 @@
 ---
 name: morning
-description: "Morning (Green Invoice) full API reference — expenses, file upload, classifications.
+description: "Morning (Green Invoice) full API reference — expenses, file upload, classifications."
 disable-model-invocation: false
-user-invocable: true
+user-invokable: true
 argument-hint: "task description"
 ---
 
@@ -10,8 +10,8 @@ argument-hint: "task description"
 
 Full reference for the Morning/Green Invoice API. Sections 1–9 cover expenses, file upload, and classifications via raw API (Python). Sections 10–18 cover all remaining endpoints via morning-cli.
 
-**Sections 1–9:** As of March 2026. Source: Apiary spec at `https://jsapi.apiary.io/apis/greeninvoice.json`.
-**Sections 10–18:** As of April 2026. Verified against live sandbox.
+**Sections 1–9:** Source: Apiary spec at `https://jsapi.apiary.io/apis/greeninvoice.json`.
+**Sections 10–18:** Verified against live sandbox.
 
 ---
 
@@ -24,7 +24,7 @@ import requests, json
 
 # Token fetch is the OAuth2 client-credentials call on the IDP host (api.morning.co).
 # The legacy POST https://api.greeninvoice.co.il/api/v1/account/token
-# ({id, secret} -> {token}) is BLOCKED from 2026-07-15. The id/secret VALUES are
+# ({id, secret} -> {token}) is BLOCKED. The id/secret VALUES are
 # unchanged — only the endpoint, field names, and grant_type change.
 resp = requests.post("https://api.morning.co/idp/v1/oauth/token",
                      json={'grant_type': 'client_credentials',
@@ -477,7 +477,7 @@ Response shape mirrors clients — key differences: has `businessId`, `fax`, `mo
 
 **Create supplier:**
 ```bash
-morning-cli --env sandbox --json supplier add --data '{"name":"Acme Vendor","country":"IL","taxId":"514756428"}'
+morning-cli --env sandbox --json supplier add --data '{"name":"Acme Vendor","country":"IL","taxId":"000000000"}'
 ```
 
 **Update supplier:**
